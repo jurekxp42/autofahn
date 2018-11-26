@@ -1,0 +1,4 @@
+#Mon Nov 26 14:26:20 CET 2018
+base.0=/home/joerg/Projekte/raspi_remote/autofahn/platforms/android/app/build/intermediates/transforms/dexMerger/debug/0
+path.0=classes.dex
+renamed.0=classes.dex

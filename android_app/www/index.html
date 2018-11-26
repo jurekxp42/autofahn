@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+   <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+
+        <script type="text/javascript" src="js/jquery.js"></script>
+      <script type="text/javascript">
+         var socket = null;
+         var isopen = false;
+         var fw_distance = 0;
+         var bw_distance = 0;
+         var socket;
+         
+         window.onload = function() {
+
+            socket = new WebSocket("ws://192.168.42.1:9000");
+            socket.binaryType = "arraybuffer";
+            
+            socket2 = new WebSocket("ws://192.168.42.10:9000");
+            socket2.binaryType = "arraybuffer";
+            
+            socket2.onopen = function() {
+               console.log("Connected!");
+               document.getElementById('control4').style.display='block';
+            }
+            
+            socket.onopen = function() {
+               console.log("Connected!");
+               document.getElementById('control').style.display='block';
+               document.getElementById('control2').style.display='block';
+               document.getElementById('control3').style.display='block';
+//                document.getElementById('control4').style.display='block';
+               document.getElementById('offline').style.display='none';
+               
+               isopen = true;
+            }
+
+            socket2.onmessage = function(e) {
+            
+            }
+            
+            socket.onmessage = function(e) {
+//                 alert( e.data );
+               if (typeof e.data == "string") {
+                  distance = e.data;
+                  if ( distance.indexOf( 'fw_' ) > 0 )  {
+                    $( '#fw_distance' ).html ( distance.substr ( 4 ) );
+                    fw_distance = distance.substr( 4 );
+                  }
+                  if ( distance.indexOf( 'bw_' ) > 0 )  {
+                    $( '#bw_distance' ).html ( distance.substr ( 4 ) );
+                    bw_distance  = distance.substr( 4 );
+                  }
+               } else {
+                  var arr = new Uint8Array(e.data);
+                  var hex = '';
+                  for (var i = 0; i < arr.length; i++) {
+                     hex += ('00' + arr[i].toString(16)).substr(-2);
+                  }
+//                   console.log("Binary message received: " + hex);
+               }
+            }
+            
+            socket2.onclose = function(e) {
+               console.log("Connection closed.");
+               document.getElementById('control4').style.display='none';
+            }
+            
+            socket.onclose = function(e) {
+               console.log("Connection closed.");
+               document.getElementById('control').style.display='none';
+               document.getElementById('control2').style.display='none';
+               document.getElementById('control3').style.display='none';
+//                document.getElementById('control4').style.display='none';
+               document.getElementById('offline').style.display='block';
+               socket = null;
+               isopen = false;
+               check_socket();
+            }
+         };
+
+         function sendText2( value ) {
+            console.log ( value );
+            socket.send( value );
+         }
+         
+         function sendText( value ) {
+            if (isopen) {
+               console.log ( value );
+               if ( value == 'cameraon' ) {
+                 $( '#camera' ).show();
+                 $( '#camera' ).attr( 'src' , ' ' );
+                 $( '#camera' ).attr( 'src' , 'http://192.168.42.1:8080/?action=stream' );
+                 socket.send( value );
+               } else if ( value == 'takePicture' ) {
+                    socket.send( value );
+                } else if ( value == 'cameraoff' ) {
+                    $( '#camera' ).hide();
+                    socket.send( value );
+                } else if ( value == 'fl' || value == 'ff' || value == 'fr' ) {
+                    if ( fw_distance > 20 || fw_distance == 0 ) {
+                        socket.send( value );
+                    }
+                } else if ( value == 'bl' || value == 'bb' || value == 'br' ) {
+                    if ( bw_distance > 20 || bw_distance == 0 ) {
+                        socket.send( value );
+                    }
+                } else  {
+                    socket.send( value );
+                }
+//                console.log($( '#camera' ).attr( 'src') );               
+            } else {
+               console.log("Connection not opened.")
+            }
+         };
+
+         
+         
+         function check_socket() {
+            console.log ( 'socket: '+socket );
+            if( !socket ) {
+                socket = new WebSocket("ws://192.168.42.1:9000");
+                socket.binaryType = "arraybuffer";
+            }
+            if( !socket2 ) {
+                socket = new WebSocket("ws://192.168.42.10:9000");
+                socket2.binaryType = "arraybuffer";
+            }
+            window.setTimeout ( 'check_socket' , 1000 );
+         }
+//          check_socket();
+      </script>
+   </head>
+   <body>
+        <table  border="0" width="300" id="offline" >
+            <tr>
+                <td style="text-align:center">
+                    <img width="45" src="images/shutdown.png" ontouchstart="document.location.reload()"  />
+                </td>
+            </tr>
+        </table>
+        
+        <table border="0" width="350" id="control" style="display:none">
+            <tr>
+                <td colspan="3" style="text-align:center"><div style="display:inline" id="fw_distance"></div> | <div style="display:inline" id="bw_distance"></div></td>
+            </tr>
+            <tr>
+                <td width="120"><img height="32" src="images/left.png" ontouchstart="sendText('fl')" ontouchend="sendText('st')"/></td>
+                <td width="120"><img height="32" src="images/up.png" ontouchstart="sendText('ff')" ontouchend="sendText('st')" /></td>
+                <td  valign="right"><img height="32" src="images/right.png" ontouchstart="sendText('fr')" ontouchend="sendText('st')"/></td>
+            </tr>
+            <tr>
+               <td ><img height="32" src="images/turnrightbw.png" ontouchstart="sendText('bll')" ontouchend="sendText('st')"/></td>
+                <td ><img height="32" src="images/stop.png" ontouchstart="sendText('st')" /></td>
+                <td valign="right"><img height="32" src="images/turnleftbw.png" ontouchstart="sendText('brr')" ontouchend="sendText('st')"/></td>
+            </tr>
+            <tr>
+                <td><img height="32" src="images/left.png" ontouchstart="sendText('bl')" ontouchend="sendText('st')"/></td>
+                <td><img height="32" src="images/down.png" ontouchstart="sendText('bb')" ontouchend="sendText('st')"/></td>
+                <td valign="right"><img height="32" src="images/right.png" ontouchstart="sendText('br')" ontouchend="sendText('st')" /></td>
+            </tr>
+        </table>
+        <table border="0" width="300" id="control4" style="display:none">
+            <tr>
+                <td><br /><br />
+                     <input style="width:270px;height:25px" type="range" name="points" min="200" max="500" onchange="sendText2( 'pwm-'+this.value);" ><br />
+                     <br />
+                     <input style="width:270px;height:25px" type="range" name="points" min="200" max="500" onchange="sendText2( 'pwm1-'+this.value);" ><br /> 
+                </td>
+            </tr>
+        </table>
+        <table border="0" width="300" id="control2" style="display:none">
+                <tr>
+                    <td width="30"><img width="30" src="images/led_on.png" ontouchstart="sendText('cameraon')" /></td>
+                    <td width="240" height="180"><img id="camera" style="display:none" src="http://192.168.42.1:8080/?action=stream" width="240" height="180" border="0" onclick="sendText('takePicture')" /></td>
+                    <td width="30"><img width="30" src="images/led_off.png" ontouchstart="sendText('cameraoff')" /></td>
+                </tr>
+        </table>
+        <table  border="0" width="300" id="control3" style="display:none">
+            <tr>
+                <td style="text-align:center">
+                    <img width="45" src="images/shutdown.png" ontouchstart="check=confirm('sure?');if(check==true){sendText('shutdown');sendText2('shutdown');}else return false;"  />
+                </td>
+            </tr>
+        </table>
+        
+
+   </body>
+</html>

@@ -1,0 +1,17 @@
+{
+  "name": "com.joerg.autofahn",
+  "version": "0.0.1",
+  "displayName": "AutoFahn",
+  "cordova": {
+    "platforms": [
+      "android"
+    ],
+    "plugins": {
+      "cordova-plugin-whitelist": {}
+    }
+  },
+  "dependencies": {
+    "cordova-android": "^7.1.1",
+    "cordova-plugin-whitelist": "1"
+  }
+}
